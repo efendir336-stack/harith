@@ -35,6 +35,12 @@ export const DEFAULT_UNIT_PRICES = {
   // Finishing
   CAT_DINDING: 48000, // per m2
   CAT_PLAFON: 42000, // per m2
+
+  // Kusen, Pintu & Jendela
+  KUSEN_ALUMINIUM: 185000, // per m1
+  PINTU_UTAMA_KACA: 4500000, // per unit (Lengkap)
+  PINTU_STANDAR: 2250000, // per unit (Lengkap)
+  JENDELA_KACA_PERMANEN: 950000, // per m2
 };
 
 export const calculateRAB = (specs: ProjectSpecs): RABCategory[] => {
@@ -175,6 +181,44 @@ export const calculateRAB = (specs: ProjectSpecs): RABCategory[] => {
           quantity: area * 1.3,
           unitPrice: DEFAULT_UNIT_PRICES.GENTENG_METAL,
           totalPrice: (area * 1.3) * DEFAULT_UNIT_PRICES.GENTENG_METAL
+        }
+      ]
+    },
+    {
+      id: 'door-window',
+      title: 'VII. PEKERJAAN KUSEN, PINTU & JENDELA',
+      items: [
+        {
+          id: 'dw-1',
+          description: 'Kusen Aluminium 4" (Coklat/Silver)',
+          unit: 'm1',
+          quantity: (perimeter * 0.5) + 24, // Estimasi panjang kusen
+          unitPrice: DEFAULT_UNIT_PRICES.KUSEN_ALUMINIUM,
+          totalPrice: ((perimeter * 0.5) + 24) * DEFAULT_UNIT_PRICES.KUSEN_ALUMINIUM
+        },
+        {
+          id: 'dw-2',
+          description: 'Pintu Utama Kaca Frame Aluminium (Double Swing)',
+          unit: 'Set',
+          quantity: 2,
+          unitPrice: DEFAULT_UNIT_PRICES.PINTU_UTAMA_KACA,
+          totalPrice: 2 * DEFAULT_UNIT_PRICES.PINTU_UTAMA_KACA
+        },
+        {
+          id: 'dw-3',
+          description: 'Pintu Standar Aluminium/PVC',
+          unit: 'Set',
+          quantity: 4,
+          unitPrice: DEFAULT_UNIT_PRICES.PINTU_STANDAR,
+          totalPrice: 4 * DEFAULT_UNIT_PRICES.PINTU_STANDAR
+        },
+        {
+          id: 'dw-4',
+          description: 'Jendela Kaca Permanen 6mm',
+          unit: 'm2',
+          quantity: (perimeter * 0.2) * 1.5, // Estimasi luas kaca
+          unitPrice: DEFAULT_UNIT_PRICES.JENDELA_KACA_PERMANEN,
+          totalPrice: ((perimeter * 0.2) * 1.5) * DEFAULT_UNIT_PRICES.JENDELA_KACA_PERMANEN
         }
       ]
     }

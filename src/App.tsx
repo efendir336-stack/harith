@@ -73,6 +73,22 @@ export default function App() {
     }, 0);
   }, [rabData]);
 
+  const allocatedFunds = useMemo(() => {
+    let remaining = totalReceived;
+    return rabData.map(cat => {
+      const catTotal = cat.items.reduce((sum, item) => sum + item.totalPrice, 0);
+      const allocated = Math.min(remaining, catTotal);
+      remaining = Math.max(0, remaining - catTotal);
+      return {
+        id: cat.id,
+        title: cat.title,
+        total: catTotal,
+        allocated,
+        percent: (allocated / catTotal) * 100
+      };
+    });
+  }, [rabData, totalReceived]);
+
   const chartData = useMemo(() => {
     return rabData.map(cat => ({
       name: cat.title.split('. ')[1] || cat.title,
@@ -121,6 +137,45 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
     link.setAttribute("download", `RAB_Masjid_${specs.length}x${specs.width}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadFundingCSV = () => {
+    const headers = ['No', 'Sumber Dana', 'Tanggal', 'Jumlah (Rp)'];
+    const rows: string[][] = [headers];
+
+    specs.fundingSources.forEach((source, idx) => {
+      rows.push([
+        (idx + 1).toString(),
+        source.name,
+        source.date,
+        source.amount.toString()
+      ]);
+    });
+
+    rows.push(['', '', 'TOTAL DANA TERKUMPUL', totalReceived.toString()]);
+    rows.push(['', '', '', '']);
+    rows.push(['No', 'Kategori Pekerjaan', 'Total RAB', 'Dana Dialokasikan', 'Status']);
+
+    allocatedFunds.forEach((alloc, idx) => {
+      rows.push([
+        (idx + 1).toString(),
+        alloc.title,
+        alloc.total.toString(),
+        alloc.allocated.toString(),
+        alloc.percent >= 100 ? 'TERPENUHI' : `${alloc.percent.toFixed(1)}%`
+      ]);
+    });
+
+    const csvContent = rows.map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Laporan_Pendanaan_Masjid.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -253,6 +308,7 @@ export default function App() {
               {activeTab === 'dashboard' && "Dashboard Proyek"}
               {activeTab === 'details' && "Rincian Anggaran Biaya"}
               {activeTab === 'analysis' && "Analisis Distribusi Biaya"}
+              {activeTab === 'funding' && "Manajemen Sumber Dana"}
             </h2>
             <p className="text-black/50 text-sm">Pembangunan Masjid Beton {specs.length}m x {specs.width}m | Lokasi: Kab. Berau</p>
           </div>
@@ -262,10 +318,10 @@ export default function App() {
               className="flex items-center gap-2 px-4 py-2 bg-white border border-black/10 rounded-xl text-sm font-medium hover:bg-black/5 transition-all"
             >
               <Printer size={16} />
-              Cetak PDF
+              Cetak Laporan
             </button>
             <button 
-              onClick={handleDownloadCSV}
+              onClick={activeTab === 'funding' ? handleDownloadFundingCSV : handleDownloadCSV}
               className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-all"
             >
               <Download size={16} />
@@ -590,45 +646,48 @@ export default function App() {
             </div>
 
             <div className="bg-white p-8 rounded-3xl border border-black/5 shadow-sm">
-              <h3 className="text-xl font-bold mb-6">Analisis Saldo</h3>
-              <div className="flex items-center gap-8">
-                <div className="flex-1 space-y-4">
-                  <div className="flex justify-between items-center p-4 bg-emerald-50 rounded-2xl">
-                    <span className="text-sm font-medium text-emerald-800">Total Dana Terkumpul</span>
-                    <span className="text-xl font-bold text-emerald-800">{formatCurrency(totalReceived)}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-4 bg-black text-white rounded-2xl">
-                    <span className="text-sm font-medium opacity-80">Total Rencana Anggaran</span>
-                    <span className="text-xl font-bold">{formatCurrency(totalCost)}</span>
-                  </div>
-                  <div className={cn(
-                    "flex justify-between items-center p-4 rounded-2xl",
-                    totalReceived >= totalCost ? "bg-blue-50 text-blue-800" : "bg-amber-50 text-amber-800"
-                  )}>
-                    <span className="text-sm font-medium">{totalReceived >= totalCost ? "Surplus Dana" : "Defisit Dana"}</span>
-                    <span className="text-xl font-bold">{formatCurrency(Math.abs(totalReceived - totalCost))}</span>
-                  </div>
+              <h3 className="text-xl font-bold mb-6">Alokasi Dana Otomatis (Sesuai Prioritas)</h3>
+              <div className="space-y-6">
+                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 mb-6">
+                  <p className="text-sm text-blue-800 flex items-center gap-2">
+                    <Info size={16} />
+                    Sistem secara otomatis mengalokasikan dana yang diterima ke setiap kategori pekerjaan berdasarkan urutan pengerjaan.
+                  </p>
                 </div>
-                <div className="w-1/3 text-center p-6 bg-[#F9F9F9] rounded-3xl border border-black/5">
-                  <p className="text-[10px] uppercase font-mono opacity-50 mb-2">Kelayakan Finansial</p>
-                  <div className="relative inline-flex items-center justify-center">
-                    <svg className="w-32 h-32">
-                      <circle className="text-black/5" strokeWidth="10" stroke="currentColor" fill="transparent" r="58" cx="64" cy="64" />
-                      <circle 
-                        className={totalReceived >= totalCost ? "text-emerald-500" : "text-amber-500"} 
-                        strokeWidth="10" 
-                        strokeDasharray={364} 
-                        strokeDashoffset={364 - (364 * Math.min(totalReceived / totalCost, 1)) } 
-                        strokeLinecap="round" 
-                        stroke="currentColor" 
-                        fill="transparent" 
-                        r="58" 
-                        cx="64" 
-                        cy="64" 
-                      />
-                    </svg>
-                    <span className="absolute text-2xl font-bold">{Math.round((totalReceived / totalCost) * 100)}%</span>
-                  </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {allocatedFunds.map((alloc) => (
+                    <div key={alloc.id} className="bg-[#F9F9F9] p-5 rounded-2xl border border-black/5">
+                      <div className="flex justify-between items-center mb-3">
+                        <div>
+                          <h4 className="font-bold text-sm">{alloc.title}</h4>
+                          <p className="text-xs text-black/40">Kebutuhan: {formatCurrency(alloc.total)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-emerald-600">{formatCurrency(alloc.allocated)}</p>
+                          <p className="text-[10px] font-mono opacity-50">TERALOKASI</p>
+                        </div>
+                      </div>
+                      <div className="w-full h-2 bg-black/5 rounded-full overflow-hidden">
+                        <div 
+                          className={cn(
+                            "h-full transition-all duration-1000",
+                            alloc.percent >= 100 ? "bg-emerald-500" : "bg-blue-500"
+                          )}
+                          style={{ width: `${Math.min(alloc.percent, 100)}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between mt-2">
+                        <span className="text-[10px] font-medium opacity-50">Progres Kesiapan Dana</span>
+                        <span className={cn(
+                          "text-[10px] font-bold",
+                          alloc.percent >= 100 ? "text-emerald-600" : "text-blue-600"
+                        )}>
+                          {alloc.percent.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
