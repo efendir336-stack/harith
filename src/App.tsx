@@ -79,6 +79,41 @@ export default function App() {
     window.print();
   };
 
+  const handleDownloadCSV = () => {
+    const headers = ['No', 'Kategori/Uraian Pekerjaan', 'Satuan', 'Volume', 'Harga Satuan', 'Jumlah Harga'];
+    const rows: string[][] = [headers];
+
+    rabData.forEach((category) => {
+      // Add category row
+      rows.push(['', category.title, '', '', '', category.items.reduce((sum, item) => sum + item.totalPrice, 0).toString()]);
+      
+      category.items.forEach((item, idx) => {
+        rows.push([
+          (idx + 1).toString(),
+          item.description,
+          item.unit,
+          item.quantity.toFixed(2),
+          item.unitPrice.toString(),
+          item.totalPrice.toString()
+        ]);
+      });
+    });
+
+    // Add Total row
+    rows.push(['', 'TOTAL ESTIMASI BIAYA', '', '', '', totalCost.toString()]);
+
+    const csvContent = rows.map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `RAB_Masjid_${specs.length}x${specs.width}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="min-h-screen bg-[#F5F5F5] text-[#141414] font-sans flex">
       {/* Sidebar */}
@@ -200,9 +235,12 @@ export default function App() {
               <Printer size={16} />
               Cetak PDF
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-all">
+            <button 
+              onClick={handleDownloadCSV}
+              className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-all"
+            >
               <Download size={16} />
-              Export Excel
+              Export CSV
             </button>
           </div>
         </header>
