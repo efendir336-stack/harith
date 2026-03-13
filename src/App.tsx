@@ -582,10 +582,14 @@ export default function App() {
         )}
 
         {activeTab === 'funding' && (
-          <div className="space-y-8">
-            <div className="bg-white p-8 rounded-3xl border border-black/5 shadow-sm">
+          <div className="space-y-8 max-w-5xl mx-auto">
+            {/* Management Section - Hidden on Print */}
+            <div className="bg-white p-8 rounded-3xl border border-black/5 shadow-sm print:hidden">
               <div className="flex justify-between items-center mb-8">
-                <h3 className="text-xl font-bold">Rincian Sumber Dana</h3>
+                <div>
+                  <h3 className="text-xl font-bold">Input Data Pendanaan</h3>
+                  <p className="text-sm text-black/40">Kelola sumber dana dan donasi yang masuk</p>
+                </div>
                 <button 
                   onClick={() => {
                     const newSource: FundingSource = {
@@ -655,119 +659,137 @@ export default function App() {
                     </div>
                   </div>
                 ))}
-
-                {specs.fundingSources.length === 0 && (
-                  <div className="text-center py-12 bg-[#F9F9F9] rounded-3xl border border-dashed border-black/10">
-                    <Wallet size={48} className="mx-auto text-black/10 mb-4" />
-                    <p className="text-black/50">Belum ada rincian sumber dana.</p>
-                  </div>
-                )}
               </div>
             </div>
 
-            <div className="bg-white p-8 rounded-3xl border border-black/5 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold">Alokasi Dana Pekerjaan</h3>
-                <div className="flex bg-[#F5F5F5] p-1 rounded-xl">
-                  <button 
-                    onClick={() => setSpecs({ ...specs, allocationMode: 'auto' })}
-                    className={cn(
-                      "px-4 py-2 text-xs font-bold rounded-lg transition-all",
-                      specs.allocationMode === 'auto' ? "bg-white shadow-sm text-black" : "text-black/40"
-                    )}
-                  >
-                    Otomatis
-                  </button>
-                  <button 
-                    onClick={() => setSpecs({ ...specs, allocationMode: 'manual' })}
-                    className={cn(
-                      "px-4 py-2 text-xs font-bold rounded-lg transition-all",
-                      specs.allocationMode === 'manual' ? "bg-white shadow-sm text-black" : "text-black/40"
-                    )}
-                  >
-                    Manual (Lapangan)
-                  </button>
+            {/* Professional Report View */}
+            <div className="bg-white p-12 rounded-none shadow-2xl border border-black/10 min-h-[1000px] flex flex-col print:shadow-none print:border-none print:p-0">
+              {/* Report Header */}
+              <div className="text-center border-b-4 border-black pb-8 mb-10">
+                <h1 className="text-2xl font-black uppercase tracking-tighter mb-1">Laporan Posisi Keuangan & Alokasi Dana</h1>
+                <h2 className="text-xl font-bold text-black/70 mb-4">PANITIA PEMBANGUNAN MASJID</h2>
+                <div className="flex justify-center gap-6 text-[10px] font-mono uppercase tracking-widest opacity-60">
+                  <span>Proyek: Masjid Beton {specs.length}x{specs.width}m</span>
+                  <span>Lokasi: Kab. Berau, Kaltim</span>
+                  <span>Tanggal Laporan: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                 </div>
               </div>
 
-              <div className="space-y-6">
+              {/* Financial Summary Cards */}
+              <div className="grid grid-cols-3 gap-6 mb-12">
+                <div className="border-2 border-black p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-2">Total Penerimaan</p>
+                  <p className="text-2xl font-black">{formatCurrency(totalReceived)}</p>
+                </div>
+                <div className="border-2 border-black p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-2">Total Kebutuhan RAB</p>
+                  <p className="text-2xl font-black">{formatCurrency(totalCost)}</p>
+                </div>
                 <div className={cn(
-                  "p-4 rounded-2xl border mb-6 flex items-center justify-between",
-                  totalAllocated > totalReceived ? "bg-red-50 border-red-100 text-red-800" : "bg-blue-50 border-blue-100 text-blue-800"
+                  "border-2 p-5",
+                  totalReceived >= totalCost ? "border-emerald-600 bg-emerald-50" : "border-red-600 bg-red-50"
                 )}>
-                  <p className="text-sm flex items-center gap-2">
-                    <Info size={16} />
-                    {specs.allocationMode === 'auto' 
-                      ? "Sistem mengalokasikan dana berdasarkan prioritas urutan pengerjaan."
-                      : "Anda dapat menyesuaikan alokasi dana sesuai dengan realita pengerjaan di lapangan."}
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-2">
+                    {totalReceived >= totalCost ? "Surplus Anggaran" : "Kekurangan Dana"}
                   </p>
-                  {specs.allocationMode === 'manual' && (
-                    <div className="text-right">
-                      <p className="text-[10px] uppercase font-mono opacity-60">Sisa Dana Belum Dialokasi</p>
-                      <p className={cn("text-sm font-bold", totalAllocated > totalReceived ? "text-red-600" : "text-blue-600")}>
-                        {formatCurrency(totalReceived - totalAllocated)}
-                      </p>
-                    </div>
-                  )}
+                  <p className="text-2xl font-black">
+                    {formatCurrency(Math.abs(totalReceived - totalCost))}
+                  </p>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                  {allocatedFunds.map((alloc) => (
-                    <div key={alloc.id} className="bg-[#F9F9F9] p-5 rounded-2xl border border-black/5">
-                      <div className="flex justify-between items-center mb-3">
-                        <div className="flex-1">
-                          <h4 className="font-bold text-sm">{alloc.title}</h4>
-                          <p className="text-xs text-black/40">Kebutuhan RAB: {formatCurrency(alloc.total)}</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          {specs.allocationMode === 'manual' ? (
-                            <div className="text-right">
-                              <label className="text-[10px] uppercase font-mono opacity-50 block mb-1">Alokasi Dana (Rp)</label>
-                              <input 
-                                type="number"
-                                value={alloc.allocated}
-                                onChange={(e) => {
-                                  const val = Number(e.target.value);
-                                  setSpecs({
-                                    ...specs,
-                                    manualAllocations: {
-                                      ...specs.manualAllocations,
-                                      [alloc.id]: val
-                                    }
-                                  });
-                                }}
-                                className="w-40 bg-white border border-black/10 rounded-lg px-3 py-1.5 text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500 outline-none text-right"
-                              />
-                            </div>
-                          ) : (
-                            <div className="text-right">
-                              <p className="text-sm font-bold text-emerald-600">{formatCurrency(alloc.allocated)}</p>
-                              <p className="text-[10px] font-mono opacity-50">TERALOKASI</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="w-full h-2 bg-black/5 rounded-full overflow-hidden">
-                        <div 
-                          className={cn(
-                            "h-full transition-all duration-1000",
-                            alloc.percent >= 100 ? "bg-emerald-500" : "bg-blue-500"
-                          )}
-                          style={{ width: `${Math.min(alloc.percent, 100)}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between mt-2">
-                        <span className="text-[10px] font-medium opacity-50">Progres Kesiapan Dana</span>
-                        <span className={cn(
-                          "text-[10px] font-bold",
-                          alloc.percent >= 100 ? "text-emerald-600" : "text-blue-600"
-                        )}>
-                          {alloc.percent.toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+              {/* Funding Sources Table */}
+              <div className="mb-12">
+                <h3 className="text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <div className="w-2 h-4 bg-black"></div>
+                  I. Rincian Penerimaan Dana
+                </h3>
+                <table className="w-full border-collapse border-2 border-black">
+                  <thead>
+                    <tr className="bg-black text-white">
+                      <th className="border-2 border-black p-2 text-[10px] uppercase text-left w-12">No</th>
+                      <th className="border-2 border-black p-2 text-[10px] uppercase text-left">Sumber Dana / Donatur</th>
+                      <th className="border-2 border-black p-2 text-[10px] uppercase text-center w-32">Tanggal</th>
+                      <th className="border-2 border-black p-2 text-[10px] uppercase text-right w-40">Jumlah (IDR)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {specs.fundingSources.map((source, idx) => (
+                      <tr key={source.id}>
+                        <td className="border-2 border-black p-2 text-xs">{idx + 1}</td>
+                        <td className="border-2 border-black p-2 text-xs font-bold">{source.name}</td>
+                        <td className="border-2 border-black p-2 text-xs text-center">{source.date}</td>
+                        <td className="border-2 border-black p-2 text-xs text-right font-mono">{formatCurrency(source.amount)}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-black/5 font-bold">
+                      <td colSpan={3} className="border-2 border-black p-2 text-xs text-right uppercase">Total Dana Terkumpul</td>
+                      <td className="border-2 border-black p-2 text-xs text-right font-mono">{formatCurrency(totalReceived)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Allocation Table */}
+              <div className="mb-12">
+                <div className="flex justify-between items-end mb-4">
+                  <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                    <div className="w-2 h-4 bg-black"></div>
+                    II. Status Alokasi & Kesiapan Pekerjaan
+                  </h3>
+                  <span className="text-[10px] font-mono opacity-50 uppercase">
+                    Metode: {specs.allocationMode === 'auto' ? 'Otomatis (Prioritas)' : 'Manual (Penyesuaian Lapangan)'}
+                  </span>
                 </div>
+                <table className="w-full border-collapse border-2 border-black">
+                  <thead>
+                    <tr className="bg-black text-white">
+                      <th className="border-2 border-black p-2 text-[10px] uppercase text-left w-12">No</th>
+                      <th className="border-2 border-black p-2 text-[10px] uppercase text-left">Kategori Pekerjaan</th>
+                      <th className="border-2 border-black p-2 text-[10px] uppercase text-right w-32">Kebutuhan</th>
+                      <th className="border-2 border-black p-2 text-[10px] uppercase text-right w-32">Teralokasi</th>
+                      <th className="border-2 border-black p-2 text-[10px] uppercase text-center w-24">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allocatedFunds.map((alloc, idx) => (
+                      <tr key={alloc.id}>
+                        <td className="border-2 border-black p-2 text-xs">{idx + 1}</td>
+                        <td className="border-2 border-black p-2 text-xs font-bold">{alloc.title}</td>
+                        <td className="border-2 border-black p-2 text-xs text-right font-mono">{formatCurrency(alloc.total)}</td>
+                        <td className="border-2 border-black p-2 text-xs text-right font-mono text-emerald-700">{formatCurrency(alloc.allocated)}</td>
+                        <td className="border-2 border-black p-2 text-center">
+                          <span className={cn(
+                            "text-[8px] font-bold px-2 py-0.5 rounded border",
+                            alloc.percent >= 100 
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-200" 
+                              : "bg-amber-100 text-amber-800 border-amber-200"
+                          )}>
+                            {alloc.percent >= 100 ? "READY" : `${Math.round(alloc.percent)}%`}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Signatories */}
+              <div className="mt-auto pt-12 grid grid-cols-2 gap-20">
+                <div className="text-center">
+                  <p className="text-xs mb-20">Dibuat Oleh,</p>
+                  <div className="border-t border-black w-48 mx-auto"></div>
+                  <p className="text-[10px] font-bold uppercase mt-2">Bendahara Pembangunan</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs mb-20">Mengetahui,</p>
+                  <div className="border-t border-black w-48 mx-auto"></div>
+                  <p className="text-[10px] font-bold uppercase mt-2">Ketua Panitia</p>
+                </div>
+              </div>
+
+              <div className="mt-10 text-[8px] font-mono opacity-30 text-center uppercase tracking-[0.2em]">
+                Dokumen ini dihasilkan secara otomatis oleh Sistem Manajemen RAB Masjid - Kab. Berau
               </div>
             </div>
           </div>
@@ -778,11 +800,19 @@ export default function App() {
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           aside { display: none !important; }
-          main { width: 100% !important; padding: 0 !important; }
+          main { width: 100% !important; padding: 0 !important; background: white !important; }
           header { display: none !important; }
+          .print\\:hidden { display: none !important; }
           .bg-white { border: none !important; box-shadow: none !important; }
-          table { font-size: 10px !important; }
+          .rounded-3xl, .rounded-2xl, .rounded-xl { border-radius: 0 !important; }
+          table { font-size: 10px !important; border-collapse: collapse !important; width: 100% !important; }
+          th, td { border: 1px solid black !important; padding: 4px !important; }
+          .border-2 { border-width: 1px !important; }
+          .border-b-4 { border-bottom-width: 2px !important; }
           tr { page-break-inside: avoid; }
+          .shadow-2xl { box-shadow: none !important; }
+          .p-12 { padding: 0 !important; }
+          .mb-12 { margin-bottom: 2rem !important; }
         }
       `}} />
     </div>
