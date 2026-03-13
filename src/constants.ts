@@ -1,37 +1,40 @@
 import { RABCategory, ProjectSpecs } from './types';
 
 export const DEFAULT_UNIT_PRICES = {
+  // Lokasi: Kabupaten Berau, Kalimantan Timur (Estimasi Harga 2024/2025)
+  // Harga sudah disesuaikan dengan biaya logistik wilayah Kalimantan
+  
   // Pekerjaan Persiapan
-  PEMBERSIHAN_LAHAN: 15000, // per m2
-  PENGUKURAN_BOUWPLANK: 45000, // per m1
+  PEMBERSIHAN_LAHAN: 22000, // per m2
+  PENGUKURAN_BOUWPLANK: 65000, // per m1
   
   // Pekerjaan Tanah
-  GALIAN_TANAH: 75000, // per m3
-  URUGAN_PASIR: 185000, // per m3
-  URUGAN_TANAH_KEMBALI: 25000, // per m3
+  GALIAN_TANAH: 95000, // per m3
+  URUGAN_PASIR: 285000, // per m3 (Pasir lokal Berau/Samarinda)
+  URUGAN_TANAH_KEMBALI: 35000, // per m3
   
-  // Pekerjaan Beton
-  BETON_K225: 1250000, // per m3
-  BESI_BETON: 15500, // per kg
-  BEKISTING: 185000, // per m2
+  // Pekerjaan Beton (Ready Mix/Site Mix Berau)
+  BETON_K225: 1650000, // per m3
+  BESI_BETON: 18500, // per kg
+  BEKISTING: 245000, // per m2
   
   // Pekerjaan Dinding
-  PASANGAN_BATA: 145000, // per m2
-  PLESTERAN: 65000, // per m2
-  ACIAN: 35000, // per m2
+  PASANGAN_BATA: 195000, // per m2 (Bata lokal/Bata ringan)
+  PLESTERAN: 85000, // per m2
+  ACIAN: 45000, // per m2
   
   // Pekerjaan Lantai
-  GRANIT_60X60: 250000, // per m2
-  KERAMIK_40X40: 165000, // per m2
+  GRANIT_60X60: 325000, // per m2
+  KERAMIK_40X40: 215000, // per m2
   
   // Pekerjaan Atap
-  RANGKA_BAJA_RINGAN: 185000, // per m2
-  GENTENG_METAL: 95000, // per m2
-  PLAFON_GYPSUM: 115000, // per m2
+  RANGKA_BAJA_RINGAN: 225000, // per m2
+  GENTENG_METAL: 135000, // per m2
+  PLAFON_GYPSUM: 145000, // per m2
   
   // Finishing
-  CAT_DINDING: 35000, // per m2
-  CAT_PLAFON: 30000, // per m2
+  CAT_DINDING: 48000, // per m2
+  CAT_PLAFON: 42000, // per m2
 };
 
 export const calculateRAB = (specs: ProjectSpecs): RABCategory[] => {

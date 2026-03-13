@@ -16,7 +16,11 @@ import {
   Printer,
   Info,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Trash2,
+  Wallet,
+  MapPin
 } from 'lucide-react';
 import { 
   PieChart, 
@@ -32,7 +36,7 @@ import {
   CartesianGrid
 } from 'recharts';
 import { calculateRAB } from './constants';
-import { ProjectSpecs, RABCategory } from './types';
+import { ProjectSpecs, RABCategory, FundingSource } from './types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -48,10 +52,18 @@ export default function App() {
     width: 18,
     height: 4.5,
     quality: 'standard',
-    receivedFunds: 500000000 // Default 500jt
+    fundingSources: [
+      { id: '1', name: 'Kas Masjid', amount: 150000000, date: '2024-01-01' },
+      { id: '2', name: 'Hibah Pemda Berau', amount: 300000000, date: '2024-02-15' },
+      { id: '3', name: 'Donatur Hamba Allah', amount: 50000000, date: '2024-03-10' }
+    ]
   });
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'details' | 'analysis'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'details' | 'analysis' | 'funding'>('dashboard');
+
+  const totalReceived = useMemo(() => {
+    return specs.fundingSources.reduce((sum, source) => sum + source.amount, 0);
+  }, [specs.fundingSources]);
 
   const rabData = useMemo(() => calculateRAB(specs), [specs]);
 
@@ -160,6 +172,16 @@ export default function App() {
             <PieChartIcon size={18} />
             Analisis Biaya
           </button>
+          <button 
+            onClick={() => setActiveTab('funding')}
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium",
+              activeTab === 'funding' ? "bg-black text-white shadow-lg" : "hover:bg-black/5"
+            )}
+          >
+            <Wallet size={18} />
+            Sumber Dana
+          </button>
         </nav>
 
         <div className="p-6 border-t border-black/5 space-y-6">
@@ -206,14 +228,11 @@ export default function App() {
                   <option value="luxury">Luxury</option>
                 </select>
               </div>
-              <div>
-                <label className="text-xs font-medium block mb-1">Dana Diterima (Rp)</label>
-                <input 
-                  type="number" 
-                  value={specs.receivedFunds}
-                  onChange={(e) => setSpecs({...specs, receivedFunds: Number(e.target.value)})}
-                  className="w-full bg-[#F5F5F5] border-none rounded-lg px-3 py-2 text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
+              <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 flex items-start gap-2">
+                <MapPin size={14} className="text-blue-600 mt-0.5" />
+                <p className="text-[10px] text-blue-700 leading-tight">
+                  Harga disesuaikan dengan standar material <strong>Kab. Berau, Kaltim</strong>.
+                </p>
               </div>
             </div>
           </div>
@@ -235,7 +254,7 @@ export default function App() {
               {activeTab === 'details' && "Rincian Anggaran Biaya"}
               {activeTab === 'analysis' && "Analisis Distribusi Biaya"}
             </h2>
-            <p className="text-black/50 text-sm">Pembangunan Masjid Beton {specs.length}m x {specs.width}m</p>
+            <p className="text-black/50 text-sm">Pembangunan Masjid Beton {specs.length}m x {specs.width}m | Lokasi: Kab. Berau</p>
           </div>
           <div className="flex gap-3">
             <button 
@@ -266,24 +285,24 @@ export default function App() {
                 </div>
                 <div className="text-right">
                   <span className="text-2xl font-bold text-emerald-600">
-                    {((specs.receivedFunds / totalCost) * 100).toFixed(1)}%
+                    {((totalReceived / totalCost) * 100).toFixed(1)}%
                   </span>
                 </div>
               </div>
               <div className="w-full h-4 bg-[#F5F5F5] rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-emerald-500 transition-all duration-1000 ease-out"
-                  style={{ width: `${Math.min((specs.receivedFunds / totalCost) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((totalReceived / totalCost) * 100, 100)}%` }}
                 />
               </div>
               <div className="grid grid-cols-3 gap-4 mt-6">
                 <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
                   <p className="text-[10px] uppercase font-mono text-emerald-700 opacity-70">Dana Diterima</p>
-                  <p className="text-lg font-bold text-emerald-700">{formatCurrency(specs.receivedFunds)}</p>
+                  <p className="text-lg font-bold text-emerald-700">{formatCurrency(totalReceived)}</p>
                 </div>
                 <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100">
                   <p className="text-[10px] uppercase font-mono text-amber-700 opacity-70">Kekurangan Dana</p>
-                  <p className="text-lg font-bold text-amber-700">{formatCurrency(Math.max(totalCost - specs.receivedFunds, 0))}</p>
+                  <p className="text-lg font-bold text-amber-700">{formatCurrency(Math.max(totalCost - totalReceived, 0))}</p>
                 </div>
                 <div className="p-4 bg-black text-white rounded-2xl">
                   <p className="text-[10px] uppercase font-mono opacity-70">Total Kebutuhan</p>
@@ -481,6 +500,136 @@ export default function App() {
                   <li>Belum termasuk biaya perizinan (IMB/PBG) dan penyambungan daya listrik/air.</li>
                   <li>Disarankan menambahkan dana tak terduga (contingency) sebesar 10% dari total RAB.</li>
                 </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'funding' && (
+          <div className="space-y-8">
+            <div className="bg-white p-8 rounded-3xl border border-black/5 shadow-sm">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-xl font-bold">Rincian Sumber Dana</h3>
+                <button 
+                  onClick={() => {
+                    const newSource: FundingSource = {
+                      id: Math.random().toString(36).substr(2, 9),
+                      name: 'Sumber Dana Baru',
+                      amount: 0,
+                      date: new Date().toISOString().split('T')[0]
+                    };
+                    setSpecs({ ...specs, fundingSources: [...specs.fundingSources, newSource] });
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-all"
+                >
+                  <Plus size={16} />
+                  Tambah Sumber
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {specs.fundingSources.map((source) => (
+                  <div key={source.id} className="grid grid-cols-12 gap-4 items-center p-4 bg-[#F9F9F9] rounded-2xl border border-black/5">
+                    <div className="col-span-5">
+                      <label className="text-[10px] uppercase font-mono opacity-50 block mb-1">Nama Sumber / Donatur</label>
+                      <input 
+                        type="text"
+                        value={source.name}
+                        onChange={(e) => {
+                          const updated = specs.fundingSources.map(s => s.id === source.id ? { ...s, name: e.target.value } : s);
+                          setSpecs({ ...specs, fundingSources: updated });
+                        }}
+                        className="w-full bg-white border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black outline-none"
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <label className="text-[10px] uppercase font-mono opacity-50 block mb-1">Jumlah (Rp)</label>
+                      <input 
+                        type="number"
+                        value={source.amount}
+                        onChange={(e) => {
+                          const updated = specs.fundingSources.map(s => s.id === source.id ? { ...s, amount: Number(e.target.value) } : s);
+                          setSpecs({ ...specs, fundingSources: updated });
+                        }}
+                        className="w-full bg-white border-none rounded-lg px-3 py-2 text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <label className="text-[10px] uppercase font-mono opacity-50 block mb-1">Tanggal Terima</label>
+                      <input 
+                        type="date"
+                        value={source.date}
+                        onChange={(e) => {
+                          const updated = specs.fundingSources.map(s => s.id === source.id ? { ...s, date: e.target.value } : s);
+                          setSpecs({ ...specs, fundingSources: updated });
+                        }}
+                        className="w-full bg-white border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black outline-none"
+                      />
+                    </div>
+                    <div className="col-span-1 flex justify-end">
+                      <button 
+                        onClick={() => {
+                          const updated = specs.fundingSources.filter(s => s.id !== source.id);
+                          setSpecs({ ...specs, fundingSources: updated });
+                        }}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {specs.fundingSources.length === 0 && (
+                  <div className="text-center py-12 bg-[#F9F9F9] rounded-3xl border border-dashed border-black/10">
+                    <Wallet size={48} className="mx-auto text-black/10 mb-4" />
+                    <p className="text-black/50">Belum ada rincian sumber dana.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-3xl border border-black/5 shadow-sm">
+              <h3 className="text-xl font-bold mb-6">Analisis Saldo</h3>
+              <div className="flex items-center gap-8">
+                <div className="flex-1 space-y-4">
+                  <div className="flex justify-between items-center p-4 bg-emerald-50 rounded-2xl">
+                    <span className="text-sm font-medium text-emerald-800">Total Dana Terkumpul</span>
+                    <span className="text-xl font-bold text-emerald-800">{formatCurrency(totalReceived)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-black text-white rounded-2xl">
+                    <span className="text-sm font-medium opacity-80">Total Rencana Anggaran</span>
+                    <span className="text-xl font-bold">{formatCurrency(totalCost)}</span>
+                  </div>
+                  <div className={cn(
+                    "flex justify-between items-center p-4 rounded-2xl",
+                    totalReceived >= totalCost ? "bg-blue-50 text-blue-800" : "bg-amber-50 text-amber-800"
+                  )}>
+                    <span className="text-sm font-medium">{totalReceived >= totalCost ? "Surplus Dana" : "Defisit Dana"}</span>
+                    <span className="text-xl font-bold">{formatCurrency(Math.abs(totalReceived - totalCost))}</span>
+                  </div>
+                </div>
+                <div className="w-1/3 text-center p-6 bg-[#F9F9F9] rounded-3xl border border-black/5">
+                  <p className="text-[10px] uppercase font-mono opacity-50 mb-2">Kelayakan Finansial</p>
+                  <div className="relative inline-flex items-center justify-center">
+                    <svg className="w-32 h-32">
+                      <circle className="text-black/5" strokeWidth="10" stroke="currentColor" fill="transparent" r="58" cx="64" cy="64" />
+                      <circle 
+                        className={totalReceived >= totalCost ? "text-emerald-500" : "text-amber-500"} 
+                        strokeWidth="10" 
+                        strokeDasharray={364} 
+                        strokeDashoffset={364 - (364 * Math.min(totalReceived / totalCost, 1)) } 
+                        strokeLinecap="round" 
+                        stroke="currentColor" 
+                        fill="transparent" 
+                        r="58" 
+                        cx="64" 
+                        cy="64" 
+                      />
+                    </svg>
+                    <span className="absolute text-2xl font-bold">{Math.round((totalReceived / totalCost) * 100)}%</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
