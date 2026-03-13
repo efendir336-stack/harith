@@ -47,7 +47,8 @@ export default function App() {
     length: 19,
     width: 18,
     height: 4.5,
-    quality: 'standard'
+    quality: 'standard',
+    receivedFunds: 500000000 // Default 500jt
   });
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'details' | 'analysis'>('dashboard');
@@ -205,6 +206,15 @@ export default function App() {
                   <option value="luxury">Luxury</option>
                 </select>
               </div>
+              <div>
+                <label className="text-xs font-medium block mb-1">Dana Diterima (Rp)</label>
+                <input 
+                  type="number" 
+                  value={specs.receivedFunds}
+                  onChange={(e) => setSpecs({...specs, receivedFunds: Number(e.target.value)})}
+                  className="w-full bg-[#F5F5F5] border-none rounded-lg px-3 py-2 text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
             </div>
           </div>
 
@@ -247,6 +257,41 @@ export default function App() {
 
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
+            {/* Funding Progress */}
+            <div className="bg-white p-8 rounded-3xl border border-black/5 shadow-sm">
+              <div className="flex justify-between items-end mb-4">
+                <div>
+                  <h3 className="text-lg font-bold">Status Pendanaan</h3>
+                  <p className="text-sm text-black/50">Progres pengumpulan dana terhadap total RAB</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-2xl font-bold text-emerald-600">
+                    {((specs.receivedFunds / totalCost) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+              <div className="w-full h-4 bg-[#F5F5F5] rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-emerald-500 transition-all duration-1000 ease-out"
+                  style={{ width: `${Math.min((specs.receivedFunds / totalCost) * 100, 100)}%` }}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4 mt-6">
+                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                  <p className="text-[10px] uppercase font-mono text-emerald-700 opacity-70">Dana Diterima</p>
+                  <p className="text-lg font-bold text-emerald-700">{formatCurrency(specs.receivedFunds)}</p>
+                </div>
+                <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                  <p className="text-[10px] uppercase font-mono text-amber-700 opacity-70">Kekurangan Dana</p>
+                  <p className="text-lg font-bold text-amber-700">{formatCurrency(Math.max(totalCost - specs.receivedFunds, 0))}</p>
+                </div>
+                <div className="p-4 bg-black text-white rounded-2xl">
+                  <p className="text-[10px] uppercase font-mono opacity-70">Total Kebutuhan</p>
+                  <p className="text-lg font-bold">{formatCurrency(totalCost)}</p>
+                </div>
+              </div>
+            </div>
+
             {/* Stats Grid */}
             <div className="grid grid-cols-4 gap-6">
               {[

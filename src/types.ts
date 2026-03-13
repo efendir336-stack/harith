@@ -18,6 +18,7 @@ export interface ProjectSpecs {
   width: number;
   height: number;
   quality: 'standard' | 'premium' | 'luxury';
+  receivedFunds: number;
 }
 
 export interface UnitPrice {
