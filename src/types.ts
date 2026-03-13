@@ -26,6 +26,8 @@ export interface ProjectSpecs {
   height: number;
   quality: 'standard' | 'premium' | 'luxury';
   fundingSources: FundingSource[];
+  allocationMode: 'auto' | 'manual';
+  manualAllocations: Record<string, number>;
 }
 
 export interface UnitPrice {

@@ -56,7 +56,9 @@ export default function App() {
       { id: '1', name: 'Kas Masjid', amount: 150000000, date: '2024-01-01' },
       { id: '2', name: 'Hibah Pemda Berau', amount: 300000000, date: '2024-02-15' },
       { id: '3', name: 'Donatur Hamba Allah', amount: 50000000, date: '2024-03-10' }
-    ]
+    ],
+    allocationMode: 'auto',
+    manualAllocations: {}
   });
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'details' | 'analysis' | 'funding'>('dashboard');
@@ -74,6 +76,20 @@ export default function App() {
   }, [rabData]);
 
   const allocatedFunds = useMemo(() => {
+    if (specs.allocationMode === 'manual') {
+      return rabData.map(cat => {
+        const catTotal = cat.items.reduce((sum, item) => sum + item.totalPrice, 0);
+        const allocated = specs.manualAllocations[cat.id] || 0;
+        return {
+          id: cat.id,
+          title: cat.title,
+          total: catTotal,
+          allocated,
+          percent: (allocated / catTotal) * 100
+        };
+      });
+    }
+
     let remaining = totalReceived;
     return rabData.map(cat => {
       const catTotal = cat.items.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -87,7 +103,11 @@ export default function App() {
         percent: (allocated / catTotal) * 100
       };
     });
-  }, [rabData, totalReceived]);
+  }, [rabData, totalReceived, specs.allocationMode, specs.manualAllocations]);
+
+  const totalAllocated = useMemo(() => {
+    return allocatedFunds.reduce((sum, item) => sum + item.allocated, 0);
+  }, [allocatedFunds]);
 
   const chartData = useMemo(() => {
     return rabData.map(cat => ({
@@ -646,26 +666,85 @@ export default function App() {
             </div>
 
             <div className="bg-white p-8 rounded-3xl border border-black/5 shadow-sm">
-              <h3 className="text-xl font-bold mb-6">Alokasi Dana Otomatis (Sesuai Prioritas)</h3>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold">Alokasi Dana Pekerjaan</h3>
+                <div className="flex bg-[#F5F5F5] p-1 rounded-xl">
+                  <button 
+                    onClick={() => setSpecs({ ...specs, allocationMode: 'auto' })}
+                    className={cn(
+                      "px-4 py-2 text-xs font-bold rounded-lg transition-all",
+                      specs.allocationMode === 'auto' ? "bg-white shadow-sm text-black" : "text-black/40"
+                    )}
+                  >
+                    Otomatis
+                  </button>
+                  <button 
+                    onClick={() => setSpecs({ ...specs, allocationMode: 'manual' })}
+                    className={cn(
+                      "px-4 py-2 text-xs font-bold rounded-lg transition-all",
+                      specs.allocationMode === 'manual' ? "bg-white shadow-sm text-black" : "text-black/40"
+                    )}
+                  >
+                    Manual (Lapangan)
+                  </button>
+                </div>
+              </div>
+
               <div className="space-y-6">
-                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 mb-6">
-                  <p className="text-sm text-blue-800 flex items-center gap-2">
+                <div className={cn(
+                  "p-4 rounded-2xl border mb-6 flex items-center justify-between",
+                  totalAllocated > totalReceived ? "bg-red-50 border-red-100 text-red-800" : "bg-blue-50 border-blue-100 text-blue-800"
+                )}>
+                  <p className="text-sm flex items-center gap-2">
                     <Info size={16} />
-                    Sistem secara otomatis mengalokasikan dana yang diterima ke setiap kategori pekerjaan berdasarkan urutan pengerjaan.
+                    {specs.allocationMode === 'auto' 
+                      ? "Sistem mengalokasikan dana berdasarkan prioritas urutan pengerjaan."
+                      : "Anda dapat menyesuaikan alokasi dana sesuai dengan realita pengerjaan di lapangan."}
                   </p>
+                  {specs.allocationMode === 'manual' && (
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase font-mono opacity-60">Sisa Dana Belum Dialokasi</p>
+                      <p className={cn("text-sm font-bold", totalAllocated > totalReceived ? "text-red-600" : "text-blue-600")}>
+                        {formatCurrency(totalReceived - totalAllocated)}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
                   {allocatedFunds.map((alloc) => (
                     <div key={alloc.id} className="bg-[#F9F9F9] p-5 rounded-2xl border border-black/5">
                       <div className="flex justify-between items-center mb-3">
-                        <div>
+                        <div className="flex-1">
                           <h4 className="font-bold text-sm">{alloc.title}</h4>
-                          <p className="text-xs text-black/40">Kebutuhan: {formatCurrency(alloc.total)}</p>
+                          <p className="text-xs text-black/40">Kebutuhan RAB: {formatCurrency(alloc.total)}</p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-emerald-600">{formatCurrency(alloc.allocated)}</p>
-                          <p className="text-[10px] font-mono opacity-50">TERALOKASI</p>
+                        <div className="flex items-center gap-4">
+                          {specs.allocationMode === 'manual' ? (
+                            <div className="text-right">
+                              <label className="text-[10px] uppercase font-mono opacity-50 block mb-1">Alokasi Dana (Rp)</label>
+                              <input 
+                                type="number"
+                                value={alloc.allocated}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value);
+                                  setSpecs({
+                                    ...specs,
+                                    manualAllocations: {
+                                      ...specs.manualAllocations,
+                                      [alloc.id]: val
+                                    }
+                                  });
+                                }}
+                                className="w-40 bg-white border border-black/10 rounded-lg px-3 py-1.5 text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500 outline-none text-right"
+                              />
+                            </div>
+                          ) : (
+                            <div className="text-right">
+                              <p className="text-sm font-bold text-emerald-600">{formatCurrency(alloc.allocated)}</p>
+                              <p className="text-[10px] font-mono opacity-50">TERALOKASI</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="w-full h-2 bg-black/5 rounded-full overflow-hidden">
